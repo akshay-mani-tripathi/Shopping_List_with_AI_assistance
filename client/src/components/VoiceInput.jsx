@@ -20,13 +20,31 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 const VoiceInput = ({ onResult }) => {
   const { transcript, resetTranscript, listening, browserSupportsSpeechRecognition } = useSpeechRecognition();
 
+  // -----------------------------
+  // Option D: Check browser support
+  // -----------------------------
   useEffect(() => {
     if (!browserSupportsSpeechRecognition) {
-      alert("⚠️ Your browser doesn't support Speech Recognition.");
+      alert("⚠️ Your browser doesn't support Speech Recognition. Please use Chrome or Edge.");
     }
   }, [browserSupportsSpeechRecognition]);
 
+  // -----------------------------
+  // Option B: Debug when trying to start listening
+  // -----------------------------
+  const handleListen = () => {
+    console.log("🎤 Attempting to start listening...");
+    resetTranscript();
+
+    SpeechRecognition.startListening({
+      continuous: false, // Stop automatically after user stops speaking
+      language: 'en-IN'  // Indian English
+    });
+  };
+
+  // -----------------------------
   // Automatically send transcript when speech ends
+  // -----------------------------
   useEffect(() => {
     if (!listening && transcript) {
       handleSend();
@@ -34,32 +52,36 @@ const VoiceInput = ({ onResult }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listening]);
 
-  // Start listening
-  const handleListen = () => {
-    resetTranscript();
-    SpeechRecognition.startListening({
-      continuous: false,
-      language: 'en-IN'
-    });
-  };
-
+  // -----------------------------
   // Send transcript to backend
+  // -----------------------------
   const handleSend = async () => {
     try {
+      // Option C: Check microphone permissions (browser will prompt automatically)
+      console.log("📡 Sending transcript to backend:", transcript);
+
       const res = await axios.post(`${BACKEND_URL}/voice-command`, { text: transcript });
       onResult(res.data);
     } catch (err) {
       console.error('❌ Failed to send to server:', err);
+      alert("⚠️ Failed to send voice command. Check console for details.");
     } finally {
       resetTranscript();
     }
   };
 
+  // -----------------------------
+  // JSX
+  // -----------------------------
   return (
     <div style={{ textAlign: 'center' }}>
-      <button onClick={handleListen} className="mic-button">
+      <button onMouseDown={handleListen} className="mic-button">
         {listening ? '🎤 Listening...' : '🎙️ Speak'}
       </button>
+
+      <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+        🔊 Please allow microphone access if prompted
+      </p>
 
       {transcript && (
         <p style={{ marginTop: '10px', fontStyle: 'italic' }}>
