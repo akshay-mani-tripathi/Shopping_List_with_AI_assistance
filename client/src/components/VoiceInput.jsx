@@ -1,34 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import axios from 'axios';
 
-/**
- * VoiceInput Component
- * --------------------
- * Handles voice input using Web Speech API and sends recognized text
- * to the backend server. Automatically triggers on speech end.
- *
- * Props:
- *  - onResult: callback function to handle server response
- */
 const VoiceInput = ({ onResult }) => {
-  // -----------------------------
-  // Speech recognition hooks
-  // -----------------------------
   const { transcript, resetTranscript, listening, browserSupportsSpeechRecognition } = useSpeechRecognition();
+  const [micError, setMicError] = useState('');
 
-  // -----------------------------
   // Check if browser supports speech recognition
-  // -----------------------------
   useEffect(() => {
     if (!browserSupportsSpeechRecognition) {
-      alert("⚠️ Your browser doesn't support Speech Recognition.");
+      setMicError("⚠️ Your browser doesn't support Speech Recognition.");
     }
   }, [browserSupportsSpeechRecognition]);
 
-  // -----------------------------
-  // Automatically send transcript when speech ends
-  // -----------------------------
+  // Auto-send transcript when user stops speaking
   useEffect(() => {
     if (!listening && transcript) {
       handleSend();
@@ -36,46 +21,62 @@ const VoiceInput = ({ onResult }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listening]);
 
-  // -----------------------------
-  // Start listening to user speech
-  // -----------------------------
-  const handleListen = () => {
-    console.log("mic started");
-    resetTranscript(); // Clear previous transcript
-    SpeechRecognition.startListening({
-      continuous: true, // Stop after user stops speaking
-      language: 'en-IN'  // Indian English
-    });
-  };
+  // Handle microphone start
+  const handleListen = async () => {
+    // Check if page is HTTPS
+    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+      setMicError('⚠️ Microphone only works on HTTPS.');
+      return;
+    }
 
-  // -----------------------------
-  // Send transcript to server
-  // -----------------------------
-  const handleSend = async () => {
     try {
-      const res = await axios.post('https://shopping-list-with-ai-assistance.onrender.com/voice-command', { text: transcript });
-      onResult(res.data); // Pass server response to parent
+      resetTranscript();
+      setMicError('');
+      console.log("🎤 Mic started");
+      await SpeechRecognition.startListening({
+        continuous: true, // better reliability on deployed sites
+        language: 'en-IN'
+      });
     } catch (err) {
-      console.error('❌ Failed to send to server:', err);
-    } finally {
-      resetTranscript(); // Clear transcript after sending
+      console.error('❌ Mic start error:', err);
+      setMicError('❌ Failed to start microphone.');
     }
   };
 
-  // -----------------------------
-  // JSX
-  // -----------------------------
+  // Send transcript to server
+  const handleSend = async () => {
+    if (!transcript) return;
+
+    try {
+      console.log('📤 Sending transcript:', transcript);
+      const res = await axios.post(
+        'https://shopping-list-with-ai-assistance.onrender.com/voice-command',
+        { text: transcript }
+      );
+      onResult(res.data);
+    } catch (err) {
+      console.error('❌ Failed to send to server:', err);
+      setMicError('❌ Server error. Check console.');
+    } finally {
+      resetTranscript();
+    }
+  };
+
   return (
     <div style={{ textAlign: 'center' }}>
-      {/* Microphone button */}
       <button onClick={handleListen} className="mic-button">
         {listening ? '🎤 Listening...' : '🎙️ Speak'}
       </button>
 
-      {/* Display what user said */}
       {transcript && (
         <p style={{ marginTop: '10px', fontStyle: 'italic' }}>
           🗣️ You said: <strong>{transcript}</strong>
+        </p>
+      )}
+
+      {micError && (
+        <p style={{ marginTop: '10px', color: 'red', fontWeight: 'bold' }}>
+          {micError}
         </p>
       )}
     </div>
