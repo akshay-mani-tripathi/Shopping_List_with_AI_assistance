@@ -31,7 +31,7 @@ const VoiceInput = ({ onResult }) => {
       resetTranscript();
 
       SpeechRecognition.startListening({
-        continuous: true,
+        continuous: false,
         language: 'en-IN'
       });
 
