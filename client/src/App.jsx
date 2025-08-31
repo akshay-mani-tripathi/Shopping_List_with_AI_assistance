@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { VoiceInput, ItemList } from './components';
+import VoiceInput from './components/VoiceInput';
+import ItemList from './components/ItemList';
 import './App.css';
 
 import { db } from './firebase';
