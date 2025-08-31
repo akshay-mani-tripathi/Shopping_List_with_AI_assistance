@@ -68,3 +68,9 @@ node app.js
 # Start frontend
 cd ../client
 npm run dev
+
+
+
+# Approach
+
+I developed a Smart Shopping List application that enables users to manage their shopping using voice commands. When a user speaks, the command is converted into a transcript and sent to the backend, where it is processed using the Gemini API. The API extracts key details such as the item name, type, quantity, and price. This structured response is then stored in a Firebase database. The data not only appears instantly on the frontend interface, allowing users to view their updated shopping list, but also powers a recommendation system. By analyzing stored items, the application provides personalized suggestions to help users make better shopping decisions. This integration of voice recognition, AI processing, real-time database storage, and intelligent recommendations creates a seamless and efficient shopping experience.
