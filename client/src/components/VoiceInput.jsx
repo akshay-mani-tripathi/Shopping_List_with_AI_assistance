@@ -11,24 +11,22 @@ import axios from 'axios';
  * Props:
  *  - onResult: callback function to handle server response
  */
+
+// -----------------------------
+// Backend URL from environment variable
+// -----------------------------
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+
 const VoiceInput = ({ onResult }) => {
-  // -----------------------------
-  // Speech recognition hooks
-  // -----------------------------
   const { transcript, resetTranscript, listening, browserSupportsSpeechRecognition } = useSpeechRecognition();
 
-  // -----------------------------
-  // Check if browser supports speech recognition
-  // -----------------------------
   useEffect(() => {
     if (!browserSupportsSpeechRecognition) {
       alert("⚠️ Your browser doesn't support Speech Recognition.");
     }
   }, [browserSupportsSpeechRecognition]);
 
-  // -----------------------------
   // Automatically send transcript when speech ends
-  // -----------------------------
   useEffect(() => {
     if (!listening && transcript) {
       handleSend();
@@ -36,42 +34,33 @@ const VoiceInput = ({ onResult }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listening]);
 
-  // -----------------------------
-  // Start listening to user speech
-  // -----------------------------
+  // Start listening
   const handleListen = () => {
-    resetTranscript(); // Clear previous transcript
+    resetTranscript();
     SpeechRecognition.startListening({
-      continuous: false, // Stop after user stops speaking
-      language: 'en-IN'  // Indian English
+      continuous: false,
+      language: 'en-IN'
     });
   };
 
-  // -----------------------------
-  // Send transcript to server
-  // -----------------------------
+  // Send transcript to backend
   const handleSend = async () => {
     try {
-      const res = await axios.post('https://shopping-list-with-ai-assistance.onrender.com/voice-command', { text: transcript });
-      onResult(res.data); // Pass server response to parent
+      const res = await axios.post(`${BACKEND_URL}/voice-command`, { text: transcript });
+      onResult(res.data);
     } catch (err) {
       console.error('❌ Failed to send to server:', err);
     } finally {
-      resetTranscript(); // Clear transcript after sending
+      resetTranscript();
     }
   };
 
-  // -----------------------------
-  // JSX
-  // -----------------------------
   return (
     <div style={{ textAlign: 'center' }}>
-      {/* Microphone button */}
       <button onClick={handleListen} className="mic-button">
         {listening ? '🎤 Listening...' : '🎙️ Speak'}
       </button>
 
-      {/* Display what user said */}
       {transcript && (
         <p style={{ marginTop: '10px', fontStyle: 'italic' }}>
           🗣️ You said: <strong>{transcript}</strong>
