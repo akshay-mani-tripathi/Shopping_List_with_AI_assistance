@@ -4,8 +4,8 @@ A voice-controlled shopping assistant built using React, Firebase, Gemini AI, an
 
 ## Live Demo
 
-Frontend: [https://voice-shopping-assistant.web.app](https://voice-shopping-assistant.web.app)  
-Backend: [https://unthinkable-solutions-technical-assesment.onrender.com](https://unthinkable-solutions-technical-assesment.onrender.com)
+Frontend: [https://shopping-list-with-ai-assistance.vercel.app/]  
+Backend: [https://shopping-list-with-ai-assistance.onrender.com]
 
 ---
 
@@ -15,7 +15,7 @@ Backend: [https://unthinkable-solutions-technical-assesment.onrender.com](https:
 - React with Vite
 - `react-speech-recognition` for voice input
 - Live recommendations via Gemini AI
-- Firebase Hosting for deployment
+- Vercel for deployment
 
 ### Backend (`server/`)
 - Node.js + Express
@@ -43,8 +43,8 @@ Backend: [https://unthinkable-solutions-technical-assesment.onrender.com](https:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/voice-shopping-assistant.git
-cd voice-shopping-assistant
+git clone https://github.com/yourusername/Shopping_List_with_AI_assistance.git
+cd Shopping_List_with_AI_assistance
 
 
 
@@ -58,7 +58,7 @@ npm install
 
 
 
-GEMINI_API_KEY=AIzaSyD9_OeuKHXTK4L3XEqbQC_SoHyyhKDBLa4
+GEMINI_API_KEY=your_api_key
 
 
 # Start backend
@@ -68,7 +68,3 @@ node app.js
 # Start frontend
 cd ../client
 npm run dev
-
-cd client
-npm run build
-firebase deploy --only hosting
