@@ -1,16 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import axios from 'axios';
-
-/**
- * VoiceInput Component
- * --------------------
- * Handles voice input using Web Speech API and sends recognized text
- * to the backend server. Automatically triggers on speech end.
- *
- * Props:
- *  - onResult: callback function to handle server response
- */
 
 // -----------------------------
 // Backend URL from environment variable
@@ -18,10 +8,11 @@ import axios from 'axios';
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 const VoiceInput = ({ onResult }) => {
-  const { transcript, resetTranscript, listening, browserSupportsSpeechRecognition } = useSpeechRecognition();
+  const { transcript, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
+  const [micActive, setMicActive] = useState(false);
 
   // -----------------------------
-  // Option D: Check browser support
+  // Option D: Browser support check
   // -----------------------------
   useEffect(() => {
     if (!browserSupportsSpeechRecognition) {
@@ -30,36 +21,49 @@ const VoiceInput = ({ onResult }) => {
   }, [browserSupportsSpeechRecognition]);
 
   // -----------------------------
-  // Option B: Debug when trying to start listening
+  // Start listening
   // -----------------------------
-  const handleListen = () => {
-    console.log("🎤 Attempting to start listening...");
-    resetTranscript();
+  const handleListen = async () => {
+    try {
+      // Explicitly request microphone permission
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      setMicActive(true);
+      resetTranscript();
 
-    SpeechRecognition.startListening({
-      continuous: false, // Stop automatically after user stops speaking
-      language: 'en-IN'  // Indian English
-    });
+      SpeechRecognition.startListening({
+        continuous: true,
+        language: 'en-IN'
+      });
+
+      // Optional: stop automatically after 7 seconds
+      setTimeout(() => handleStop(), 7000);
+    } catch (err) {
+      alert("⚠️ Microphone access denied!");
+      console.error(err);
+    }
   };
 
   // -----------------------------
-  // Automatically send transcript when speech ends
+  // Stop listening
   // -----------------------------
-  useEffect(() => {
-    if (!listening && transcript) {
-      handleSend();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listening]);
+  const handleStop = () => {
+    SpeechRecognition.stopListening();
+    setMicActive(false);
+  };
 
   // -----------------------------
   // Send transcript to backend
   // -----------------------------
+  useEffect(() => {
+    if (transcript && !micActive) {
+      handleSend();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [micActive]);
+
   const handleSend = async () => {
     try {
-      // Option C: Check microphone permissions (browser will prompt automatically)
       console.log("📡 Sending transcript to backend:", transcript);
-
       const res = await axios.post(`${BACKEND_URL}/voice-command`, { text: transcript });
       onResult(res.data);
     } catch (err) {
@@ -75,9 +79,19 @@ const VoiceInput = ({ onResult }) => {
   // -----------------------------
   return (
     <div style={{ textAlign: 'center' }}>
-      <button onMouseDown={handleListen} className="mic-button">
-        {listening ? '🎤 Listening...' : '🎙️ Speak'}
+      <button
+        onClick={handleListen}
+        className="mic-button"
+        disabled={micActive}
+      >
+        {micActive ? '🎤 Listening...' : '🎙️ Speak'}
       </button>
+
+      {micActive && (
+        <button onClick={handleStop} className="mic-button" style={{ marginLeft: '10px' }}>
+          🛑 Stop
+        </button>
+      )}
 
       <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
         🔊 Please allow microphone access if prompted
