@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { VoiceInput , ItemList } from './components';
+import { VoiceInput, ItemList } from './components';
 import './App.css';
 
 import { db } from './firebase';
@@ -12,18 +12,20 @@ import {
   deleteDoc
 } from 'firebase/firestore';
 
+// -----------------------------
+// Backend URL from environment variable
+// -----------------------------
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+
 function App() {
-  // -----------------------------
-  // State variables
-  // -----------------------------
-  const [shoppingList, setShoppingList] = useState([]); // Live shopping list
-  const [recommendations, setRecommendations] = useState([]); // AI recommendations
-  const [alert, setAlert] = useState(null); // Alert messages
-  const [searchResults, setSearchResults] = useState([]); // Search results
-  const [searched, setSearched] = useState(false); // Toggle search view
+  const [shoppingList, setShoppingList] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
+  const [alert, setAlert] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searched, setSearched] = useState(false);
 
   // -----------------------------
-  // Fetch recommendations based on shopping history
+  // Fetch recommendations
   // -----------------------------
   const fetchRecommendations = async () => {
     try {
@@ -31,23 +33,21 @@ function App() {
       const historyItems = [];
       historySnapshot.forEach(doc => historyItems.push(doc.data()));
 
-      const res = await fetch('https://shopping-list-with-ai-assistance.onrender.com/voice-command/recommend', {
+      const res = await fetch(`${BACKEND_URL}/voice-command/recommend`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ history: historyItems })
       });
 
       const recData = await res.json();
-      if (recData?.recommendations) {
-        setRecommendations(recData.recommendations);
-      }
+      if (recData?.recommendations) setRecommendations(recData.recommendations);
     } catch (err) {
       console.error('❌ Failed to fetch recommendations:', err);
     }
   };
 
   // -----------------------------
-  // Initial fetch of shopping list and recommendations
+  // Initial fetch of shopping list
   // -----------------------------
   useEffect(() => {
     const fetchList = async () => {
@@ -66,31 +66,27 @@ function App() {
   }, []);
 
   // -----------------------------
-  // Main update function triggered by voice input
+  // Update shopping list based on voice command
   // -----------------------------
   const updateList = (data) => {
-    // Handle invalid commands
     if (!data || data === 'Not a shopping command.') {
       showAlert('⚠️ Not a shopping command.');
       return;
     }
 
-    // Handle search intent
     if (data.intent === 'search_item') {
       handleSearch(data.search_term);
       return;
     }
 
-    // Reset search view
     setSearchResults([]);
     setSearched(false);
 
-    // Update shopping list based on add/remove intents
     setShoppingList(prev => handleAddOrRemove(prev, data));
   };
 
   // -----------------------------
-  // Helper: Display alert
+  // Show alert helper
   // -----------------------------
   const showAlert = (message, duration = 3000) => {
     setAlert(message);
@@ -98,7 +94,7 @@ function App() {
   };
 
   // -----------------------------
-  // Handle search command
+  // Search handler
   // -----------------------------
   const handleSearch = (term) => {
     const filtered = shoppingList.filter(item =>
@@ -119,27 +115,17 @@ function App() {
   };
 
   // -----------------------------
-  // Handle add or remove intent
+  // Add or remove handler
   // -----------------------------
   const handleAddOrRemove = (prevList, data) => {
     const existing = prevList.find(entry => entry.item.toLowerCase() === data.item?.toLowerCase());
 
-    // Add item
-    if (data.intent === 'add_to_list') {
-      return addItem(prevList, existing, data);
-    }
-
-    // Remove item
-    if (data.intent === 'remove_from_list' && existing) {
-      return removeItem(prevList, existing, data);
-    }
+    if (data.intent === 'add_to_list') return addItem(prevList, existing, data);
+    if (data.intent === 'remove_from_list' && existing) return removeItem(prevList, existing, data);
 
     return prevList;
   };
 
-  // -----------------------------
-  // Add new item or update existing
-  // -----------------------------
   const addItem = (prev, existing, data) => {
     const newItem = {
       item: data.item,
@@ -150,7 +136,6 @@ function App() {
       size: data.size || 'any'
     };
 
-    // Save to Firestore
     const saveToFirebase = async () => {
       try {
         await setDoc(doc(db, 'live_shopping_list', newItem.item), newItem);
@@ -164,7 +149,6 @@ function App() {
 
     showAlert(`✅ Added ${newItem.quantity} ${newItem.item}(s)`);
 
-    // Merge with existing item
     if (existing) {
       return prev.map(entry =>
         entry.item.toLowerCase() === data.item.toLowerCase()
@@ -185,9 +169,6 @@ function App() {
     }
   };
 
-  // -----------------------------
-  // Remove item or decrease quantity
-  // -----------------------------
   const removeItem = (prev, existing, data) => {
     const updatedList = existing.quantity > data.quantity
       ? prev.map(entry =>
@@ -223,18 +204,14 @@ function App() {
   // -----------------------------
   return (
     <div className="container">
-      {/* Header with Voice Input */}
       <div className="header">
         <h2>🛒 Voice Shopping Assistant</h2>
         <VoiceInput onResult={updateList} />
       </div>
 
-      {/* Alert messages */}
       {alert && <div className="alert">{alert}</div>}
 
-      {/* Main content: Shopping list and recommendations */}
       <div className="main-content">
-        {/* Shopping List */}
         <div className="list-section">
           {searched ? (
             <>
@@ -246,7 +223,6 @@ function App() {
           )}
         </div>
 
-        {/* Recommendations */}
         <div className="recommendation-section">
           <h3>✨ Recommendations</h3>
           {recommendations.length === 0 ? (
