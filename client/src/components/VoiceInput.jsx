@@ -43,7 +43,7 @@ const VoiceInput = ({ onResult }) => {
     console.log("mic started");
     resetTranscript(); // Clear previous transcript
     SpeechRecognition.startListening({
-      continuous: false, // Stop after user stops speaking
+      continuous: true, // Stop after user stops speaking
       language: 'en-IN'  // Indian English
     });
   };
