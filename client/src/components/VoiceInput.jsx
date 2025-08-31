@@ -40,6 +40,7 @@ const VoiceInput = ({ onResult }) => {
   // Start listening to user speech
   // -----------------------------
   const handleListen = () => {
+    console.log("mic started");
     resetTranscript(); // Clear previous transcript
     SpeechRecognition.startListening({
       continuous: false, // Stop after user stops speaking
